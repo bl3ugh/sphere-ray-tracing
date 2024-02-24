@@ -1,0 +1,27 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+#include "UnityCG.cginc"
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> Result;
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    //number of blocks in each direction
+    const uint numBlocks = 5;
+    
+    //screen dimensions
+    const uint screenX = _ScreenParams.x / numBlocks;
+    const uint screenY = _ScreenParams.y / numBlocks;
+
+    //number of pixels to get block num
+    const uint blockSizeX = screenX / numBlocks;
+    const uint blockSizeY = screenY / numBlocks;
+    
+    float red, green, blue;
+    red = ((id.x  % blockSizeX));
+    green = ((id.y % blockSizeY ));
+    Result[id.xy] = float4(red, green, 0.0, 0.0);
+}
