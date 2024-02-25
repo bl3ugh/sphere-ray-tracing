@@ -12,6 +12,8 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     //number of blocks in each direction
     const uint numBlocks = 5;
     
+    const uint circleCentre = 200;
+    const uint circleRadius = 30;
     //screen dimensions
     const uint screenX = _ScreenParams.x / numBlocks;
     const uint screenY = _ScreenParams.y / numBlocks;
@@ -19,9 +21,19 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     //number of pixels to get block num
     const uint blockSizeX = screenX / numBlocks;
     const uint blockSizeY = screenY / numBlocks;
-    
+
     float red, green, blue;
-    red = ((id.x  % blockSizeX));
-    green = ((id.y % blockSizeY ));
-    Result[id.xy] = float4(red, green, 0.0, 0.0);
+
+    if(((id.x-circleCentre) * (id.x-circleCentre) + (id.y - circleCentre) * (id.y - circleCentre)) < (circleRadius * circleRadius)){
+        red = 1;
+        green = 1;
+        blue = 1;
+    }
+    else{
+        red = 0;
+        green = 0;
+        blue = 0;
+    }
+    
+    Result[id.xy] = float4(red, green, blue, 0.0);
 }
