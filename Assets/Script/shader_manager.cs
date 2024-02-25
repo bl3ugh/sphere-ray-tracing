@@ -9,25 +9,29 @@ public class shader_manager : MonoBehaviour
 
     private RenderTexture _target;
 
+    private Camera _camera;
     private void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
         Render(destination);
     }
 
-    private void Render(RenderTexture destination)
-    {
-        // Make sure we have a current render target
-        InitRenderTexture();
-        
-        // Set the target and dispatch the compute shader
-        RayTracingShader.SetTexture(0, "Result", _target);
-        int threadGroupsX = Mathf.CeilToInt(Screen.width / 8.0f);
-        int threadGroupsY = Mathf.CeilToInt(Screen.height / 8.0f);
-        RayTracingShader.Dispatch(0, threadGroupsX, threadGroupsY, 1);
+private void Render(RenderTexture destination)
+{
+    // Make sure we have a current render target
+    InitRenderTexture();
 
-        // Blit the result texture to the screen
-        Graphics.Blit(_target, destination);
-    }
+    // Set shader parameters
+    SetShaderParameters();
+
+    // Set the target and dispatch the compute shader
+    RayTracingShader.SetTexture(0, "Result", _target);
+    int threadGroupsX = Mathf.CeilToInt(Screen.width / 8.0f);
+    int threadGroupsY = Mathf.CeilToInt(Screen.height / 8.0f);
+    RayTracingShader.Dispatch(0, threadGroupsX, threadGroupsY, 1);
+
+    // Blit the result texture to the screen
+    Graphics.Blit(_target, destination);
+}
 
     private void InitRenderTexture()
     {
@@ -43,6 +47,19 @@ public class shader_manager : MonoBehaviour
             _target.enableRandomWrite = true;
             _target.Create();
         }
+    }
+
+
+
+    private void Awake()
+    {
+        _camera = GetComponent<Camera>();
+    }
+
+    private void SetShaderParameters()
+    {
+        RayTracingShader.SetMatrix("_CameraToWorld", _camera.cameraToWorldMatrix);
+        RayTracingShader.SetMatrix("_CameraInverseProjection", _camera.projectionMatrix.inverse);
     }
 }
 

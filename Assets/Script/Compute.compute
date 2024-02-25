@@ -6,34 +6,51 @@
 // with cs.SetTexture
 RWTexture2D<float4> Result;
 
+
+float4x4 _CameraToWorld;
+float4x4 _CameraInverseProjection;
+
+struct Ray
+{
+    float3 origin;
+    float3 direction;
+};
+
+Ray CreateRay(float3 origin, float3 direction)
+{
+    Ray ray;
+    ray.origin = origin;
+    ray.direction = direction;
+    return ray;
+}
+
+Ray CreateCameraRay(float2 uv)
+{
+    // Transform the camera origin to world space
+    float3 origin = mul(_CameraToWorld, float4(0.0f, 0.0f, 0.0f, 1.0f)).xyz;
+    
+    // Invert the perspective projection of the view-space position
+    float3 direction = mul(_CameraInverseProjection, float4(uv, 0.0f, 1.0f)).xyz;
+    // Transform the direction from camera to world space and normalize
+    direction = mul(_CameraToWorld, float4(direction, 0.0f)).xyz;
+    direction = normalize(direction);
+
+    return CreateRay(origin, direction);
+}
+
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
-    //number of blocks in each direction
-    const uint numBlocks = 5;
-    
-    const uint circleCentre = 200;
-    const uint circleRadius = 30;
-    //screen dimensions
-    const uint screenX = _ScreenParams.x / numBlocks;
-    const uint screenY = _ScreenParams.y / numBlocks;
+    // Get the dimensions of the RenderTexture
+    uint width, height;
+    Result.GetDimensions(width, height);
 
-    //number of pixels to get block num
-    const uint blockSizeX = screenX / numBlocks;
-    const uint blockSizeY = screenY / numBlocks;
+    // Transform pixel to [-1,1] range
+    float2 uv = float2((id.xy + float2(0.5f, 0.5f)) / float2(width, height) * 2.0f - 1.0f);
 
-    float red, green, blue;
+    // Get a ray for the UVs
+    Ray ray = CreateCameraRay(uv);
 
-    if(((id.x-circleCentre) * (id.x-circleCentre) + (id.y - circleCentre) * (id.y - circleCentre)) < (circleRadius * circleRadius)){
-        red = 1;
-        green = 1;
-        blue = 1;
-    }
-    else{
-        red = 0;
-        green = 0;
-        blue = 0;
-    }
-    
-    Result[id.xy] = float4(red, green, blue, 0.0);
+    // Write some colors
+    Result[id.xy] = float4(ray.direction * 0.5f + 0.5f, 1.0f);
 }
