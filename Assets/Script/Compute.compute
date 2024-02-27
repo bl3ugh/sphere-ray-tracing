@@ -6,6 +6,7 @@
 // with cs.SetTexture
 RWTexture2D<float4> Result;
 
+uniform int NumSpheres;
 
 float4x4 _CameraToWorld;
 float4x4 _CameraInverseProjection;
@@ -15,6 +16,29 @@ struct Ray
     float3 origin;
     float3 direction;
 };
+
+struct Sphere
+{
+    float3 Position; // xyz position
+    float4 Colour;   // RGB Value as well as a reflective value
+    float  Radius;    // Radius of the sphere
+};
+
+RWStructuredBuffer<Sphere> Spheres;
+
+struct RayHit{
+    float3 position;
+    float distance;
+    float3 normal;
+};
+
+RayHit CreateRayHit(){
+    RayHit hit;
+    hit.position = float3(0.0f, 0.0f, 0.0f);
+    hit.distance = 1.#INF;
+    hit.normal = float3(0.0f, 0.0f, 0.0f);
+    return hit;
+}
 
 Ray CreateRay(float3 origin, float3 direction)
 {
@@ -38,6 +62,79 @@ Ray CreateCameraRay(float2 uv)
     return CreateRay(origin, direction);
 }
 
+
+void IntersectsGround(Ray ray, inout RayHit bestHit){
+    //How long till intersecting ground plane
+    float dist = -ray.origin.y / ray.direction.y;
+    //if touches the ground and it is the closest thing
+    if (dist > 0 && dist < bestHit.distance){
+        bestHit.distance = dist;
+        bestHit.position = ray.origin + (dist * ray.direction);
+        bestHit.normal = float3(0.0, 1.0, 0.0);
+    }
+}
+
+void IntersectsSphere(Sphere sphere, Ray ray, inout RayHit bestHit){
+    float3 originToCenter = ray.origin - sphere.Position;
+
+    //dot between unit vector ray position and distance ^^
+    float p1 = -dot(ray.direction, originToCenter);
+
+    //see if line has any intersections ? > 0
+    float hasIntersections = p1*p1 - dot(originToCenter, originToCenter) - sphere.Radius * sphere.Radius;
+
+    //if > 0 there are intersections
+    if (hasIntersections > 0) {
+
+        //no need to change anything
+        return;
+    }//implied else
+    
+    float p2 = sqrt(hasIntersections);
+
+    
+ /* t shows how many ray directions away an intersection is
+    positive value
+    if its not p1 away from p2 in p1 direction check inverse direction  */
+    float t = p2 - p1 > 0 ? p2 - p1 : p1 + p2;
+    
+    if(0 < t && t < bestHit.distance){
+        bestHit.distance = t;
+        bestHit.position = ray.origin + ray.direction * t;
+        bestHit.normal = normalize(bestHit.position - sphere.Position);
+    }
+
+}
+
+void IntersectsSpheres(Ray ray, inout RayHit bestHit){
+    for(int i = 0; i < NumSpheres; i++){
+        IntersectsSphere(Spheres[i], ray, bestHit);
+    }
+}
+
+
+RayHit Trace (Ray ray){
+
+    RayHit bestHit = CreateRayHit();
+    IntersectsSpheres(ray, bestHit);
+    return bestHit;
+}
+
+float3 Shade(inout Ray ray, RayHit hit, float3 current)
+{
+    if (hit.distance < 1.#INF)
+    {
+        // Return the normal
+        return hit.normal;
+    }
+    else
+    {
+        //the colourfull sky
+        return current;
+    }
+}
+
+
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
@@ -45,12 +142,15 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     uint width, height;
     Result.GetDimensions(width, height);
 
+    // Get a ray for the UVs
     // Transform pixel to [-1,1] range
     float2 uv = float2((id.xy + float2(0.5f, 0.5f)) / float2(width, height) * 2.0f - 1.0f);
 
-    // Get a ray for the UVs
     Ray ray = CreateCameraRay(uv);
 
-    // Write some colors
-    Result[id.xy] = float4(ray.direction * 0.5f + 0.5f, 1.0f);
+    RayHit hit = Trace(ray);
+    
+    float3 result = Shade(ray, hit, ray.direction * 0.5f + 0.5f);
+    
+    Result[id.xy] = float4(result, 1);
 }
