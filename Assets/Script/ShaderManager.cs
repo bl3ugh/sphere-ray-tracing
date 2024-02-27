@@ -16,7 +16,6 @@ public class shader_manager : MonoBehaviour
 
     //
     private int numSpheres = 10;
-    public ComputeShader computeShader;
     private ComputeBuffer computeBuffer;
     //
 
@@ -25,14 +24,16 @@ public class shader_manager : MonoBehaviour
     private void Awake()
     {
         _camera = GetComponent<Camera>();
+        
+        
+        ///////////////////////
         sphereGenerator = new SphereGenerator();
+
         //make a list of spheres on a larger sphere
         SphereGenerator.Sphere earth = new SphereGenerator.Sphere();
-        earth.Radius = 2000.0f;
-        earth.Position = new Vector3(-earth.Radius, 0, 0);
+        earth.Radius = 20.0f;
+        earth.Position = new Vector3(earth.Radius, 0, 0);
         spheres = sphereGenerator.GenerateSpheresOnEarth(numSpheres, earth, 10.0f);
-        Debug.Log(Marshal.SizeOf(typeof(SphereGenerator.Sphere)));
-        computeBuffer = new ComputeBuffer(spheres.Length, Marshal.SizeOf(typeof(SphereGenerator.Sphere)));
     }
 
     private void OnRenderImage(RenderTexture source, RenderTexture destination)
@@ -48,9 +49,10 @@ public class shader_manager : MonoBehaviour
         // Set shader parameters
         SetShaderParameters();
 
-
+        computeBuffer = new ComputeBuffer(numSpheres, Marshal.SizeOf(typeof(SphereGenerator.Sphere)));
         computeBuffer.SetData(spheres);
-
+        RayTracingShader.SetInt("NumSpheres", numSpheres);
+        RayTracingShader.SetBuffer(0, "Spheres", computeBuffer);
         RayTracingShader.SetTexture(0, "Result", _target);
 
         //dispatch it
@@ -90,8 +92,6 @@ public class shader_manager : MonoBehaviour
 
     private void SetShaderParameters()
     {
-        RayTracingShader.SetInt("NumSpheres", numSpheres);
-        RayTracingShader.SetBuffer(0, "Spheres", computeBuffer);
         RayTracingShader.SetMatrix("_CameraToWorld", _camera.cameraToWorldMatrix);
         RayTracingShader.SetMatrix("_CameraInverseProjection", _camera.projectionMatrix.inverse);
     }

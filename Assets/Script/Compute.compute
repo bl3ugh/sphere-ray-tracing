@@ -81,11 +81,10 @@ void IntersectsSphere(Sphere sphere, Ray ray, inout RayHit bestHit){
     float p1 = -dot(ray.direction, originToCenter);
 
     //see if line has any intersections ? > 0
-    float hasIntersections = p1*p1 - dot(originToCenter, originToCenter) - sphere.Radius * sphere.Radius;
+    float hasIntersections = p1*p1 - dot(originToCenter, originToCenter) + sphere.Radius * sphere.Radius;
 
     //if > 0 there are intersections
-    if (hasIntersections > 0) {
-
+    if (hasIntersections < 0) {
         //no need to change anything
         return;
     }//implied else
@@ -114,23 +113,22 @@ void IntersectsSpheres(Ray ray, inout RayHit bestHit){
 
 
 RayHit Trace (Ray ray){
-
+ 
     RayHit bestHit = CreateRayHit();
     IntersectsSpheres(ray, bestHit);
     return bestHit;
 }
 
-float3 Shade(inout Ray ray, RayHit hit, float3 current)
+float3 Shade(inout Ray ray, RayHit bestHit)
 {
-    if (hit.distance < 1.#INF)
+    if (bestHit.distance < 1.#INF)
     {
         // Return the normal
-        return hit.normal;
+        return bestHit.normal;
     }
     else
     {
-        //the colourfull sky
-        return current;
+        return float3(0.0f, 0.0f, 0.0f);
     }
 }
 
@@ -148,9 +146,9 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
     Ray ray = CreateCameraRay(uv);
 
-    RayHit hit = Trace(ray);
+    RayHit bestHit = Trace(ray);
     
-    float3 result = Shade(ray, hit, ray.direction * 0.5f + 0.5f);
+    float3 result = Shade(ray, bestHit);
     
     Result[id.xy] = float4(result, 1);
 }
