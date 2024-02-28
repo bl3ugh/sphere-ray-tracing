@@ -31,9 +31,11 @@ public class shader_manager : MonoBehaviour
 
         //make a list of spheres on a larger sphere
         SphereGenerator.Sphere earth = new SphereGenerator.Sphere();
-        earth.Radius = 20.0f;
-        earth.Position = new Vector3(earth.Radius, 0, 0);
-        spheres = sphereGenerator.GenerateSpheresOnEarth(numSpheres, earth, 10.0f);
+        earth.Radius = 2000.0f;
+        earth.Position = new Vector3(0, -earth.Radius, 0);
+        earth.Colour = new Vector4(0.76f, 0.76f, 0.76f, 0.2f);
+
+        spheres = sphereGenerator.GenerateSpheresOnEarth(numSpheres, earth, Random.Range(0f,1f));
     }
 
     private void OnRenderImage(RenderTexture source, RenderTexture destination)

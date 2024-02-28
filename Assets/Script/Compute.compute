@@ -30,6 +30,8 @@ struct RayHit{
     float3 position;
     float distance;
     float3 normal;
+    float3 colour;
+    float sphereReflectance;
 };
 
 RayHit CreateRayHit(){
@@ -37,6 +39,8 @@ RayHit CreateRayHit(){
     hit.position = float3(0.0f, 0.0f, 0.0f);
     hit.distance = 1.#INF;
     hit.normal = float3(0.0f, 0.0f, 0.0f);
+    hit.colour = float3(0.0, 0.0, 0.0);
+    hit.sphereReflectance = float(0.0);
     return hit;
 }
 
@@ -71,6 +75,7 @@ void IntersectsGround(Ray ray, inout RayHit bestHit){
         bestHit.distance = dist;
         bestHit.position = ray.origin + (dist * ray.direction);
         bestHit.normal = float3(0.0, 1.0, 0.0);
+        bestHit.colour = float3(1.0, 1.0, 1.0);
     }
 }
 
@@ -95,12 +100,14 @@ void IntersectsSphere(Sphere sphere, Ray ray, inout RayHit bestHit){
  /* t shows how many ray directions away an intersection is
     positive value
     if its not p1 away from p2 in p1 direction check inverse direction  */
-    float t = p2 - p1 > 0 ? p2 - p1 : p1 + p2;
+    float t = p1 - p2> 0 ? p1 - p2 : p1 + p2;
     
     if(0 < t && t < bestHit.distance){
         bestHit.distance = t;
         bestHit.position = ray.origin + ray.direction * t;
         bestHit.normal = normalize(bestHit.position - sphere.Position);
+        bestHit.colour = sphere.Colour.xyz;
+        bestHit.sphereReflectance = sphere.Colour.w;
     }
 
 }
@@ -124,7 +131,7 @@ float3 Shade(inout Ray ray, RayHit bestHit)
     if (bestHit.distance < 1.#INF)
     {
         // Return the normal
-        return bestHit.normal;
+        return bestHit.colour * bestHit.sphereReflectance;
     }
     else
     {
