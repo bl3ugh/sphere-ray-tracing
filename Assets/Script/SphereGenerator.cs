@@ -2,9 +2,26 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Runtime.InteropServices;
+using Unity.VisualScripting;
 
-public class SphereGenerator
+public class SphereGenerator : MonoBehaviour
 {
+    //
+    [SerializeField] private int numSpheres = 10;
+    private Sphere[] spheres;
+
+    public int getNumSpheres
+    {
+        get { return numSpheres; }
+        set { numSpheres = value;  }
+    }
+
+    public Sphere[] SpheresArr
+    {
+        get { return spheres; }
+        set { spheres = value; }
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     public struct Sphere
     {
@@ -13,14 +30,15 @@ public class SphereGenerator
         public float Radius;
     }
 
-    public Sphere[] GenerateSpheresOnEarth(int n, Sphere earth, float minDistance)
+    public Sphere[] GenerateSpheresOnEarth(int n, Sphere earth)
     {
         Sphere[] spheres = new Sphere[n];
         spheres[0] = earth;
         for (int i = 1; i < n; i++)
         {
-            float latitude = Random.Range(-5f, 5f);
-            float longitude = Random.Range(0f, 10f);
+            float minDistance = Random.Range(0f, 1f);
+            float latitude = Random.Range(80f, 90f);
+            float longitude = Random.Range(0f, 360f);
 
             float r = Random.Range(0f, 1.0f);
             float g = Random.Range(0f, 1.0f);

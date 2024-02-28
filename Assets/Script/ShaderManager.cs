@@ -2,9 +2,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Runtime.InteropServices;
+using UnityEngine.UIElements;
 
 public class shader_manager : MonoBehaviour
 {
+    //idk any other way thats easy
+    private SphereGenerator sphereGenerator;
+    private PlayerMovement playerMovement;
 
     public ComputeShader RayTracingShader;
 
@@ -12,30 +16,36 @@ public class shader_manager : MonoBehaviour
 
     private Camera _camera;
 
-    private SphereGenerator sphereGenerator = new SphereGenerator();
 
-    //
-    private int numSpheres = 10;
-    private ComputeBuffer computeBuffer;
-    //
-
+    private int numSpheres;
     private SphereGenerator.Sphere[] spheres;
+
+
+    private ComputeBuffer computeBuffer;
+
+
+
 
     private void Awake()
     {
-        _camera = GetComponent<Camera>();
-        
-        
-        ///////////////////////
-        sphereGenerator = new SphereGenerator();
+        sphereGenerator = GetComponent<SphereGenerator>();
+        playerMovement = GetComponent<PlayerMovement>();
 
         //make a list of spheres on a larger sphere
         SphereGenerator.Sphere earth = new SphereGenerator.Sphere();
         earth.Radius = 2000.0f;
-        earth.Position = new Vector3(0, -earth.Radius, 0);
+        Vector3 center = new Vector3(0, -earth.Radius, 0);
+        earth.Position = center;
         earth.Colour = new Vector4(0.76f, 0.76f, 0.76f, 0.2f);
+        numSpheres = sphereGenerator.getNumSpheres;
+        spheres = sphereGenerator.GenerateSpheresOnEarth(numSpheres, earth);
 
-        spheres = sphereGenerator.GenerateSpheresOnEarth(numSpheres, earth, Random.Range(0f,1f));
+        //Initialise data for player camera
+        playerMovement.SpheresArr = spheres;
+        playerMovement.Center = center;
+
+
+        _camera = GetComponent<Camera>();
     }
 
     private void OnRenderImage(RenderTexture source, RenderTexture destination)

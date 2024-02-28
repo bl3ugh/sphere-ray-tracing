@@ -66,6 +66,7 @@
   <ItemGroup>
     <Compile Include="Assets\Script\ShaderManager.cs" />
     <Compile Include="Assets\Script\SphereGenerator.cs" />
+    <Compile Include="Assets\Script\PlayerMovement.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Script\Compute.compute" />
